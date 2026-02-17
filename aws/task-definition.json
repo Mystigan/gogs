@@ -1,0 +1,136 @@
+{
+  "family": "gogs-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::582187152769:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::582187152769:role/EcsTaskEfsAccessRole",
+  "containerDefinitions": [
+    {
+      "name": "gogs",
+      "image": "582187152769.dkr.ecr.us-east-1.amazonaws.com/gogs:latest",
+      "cpu": 0,
+      "essential": true,
+      "portMappings": [
+        {
+          "name": "gogs-3000-tcp",
+          "containerPort": 3000,
+          "hostPort": 3000,
+          "protocol": "tcp",
+          "appProtocol": "http"
+        }
+      ],
+      "environment": [
+        {
+          "name": "DB_TYPE",
+          "value": "postgres"
+        },
+        {
+          "name": "DOMAIN",
+          "value": "gogs-alb-395229985.us-east-1.elb.amazonaws.com"
+        },
+        {
+          "name": "ROOT_URL",
+          "value": "http://gogs-alb-395229985.us-east-1.elb.amazonaws.com/"
+        },
+        {
+          "name": "DB_USER",
+          "value": "gogs"
+        },
+        {
+          "name": "DB_NAME",
+          "value": "gogs"
+        },
+        {
+          "name": "DB_HOST",
+          "value": "gogs-db.c4x8awigcej8.us-east-1.rds.amazonaws.com:5432"
+        },
+        {
+          "name": "REDIS_ADDR",
+          "value": "gogs-redis.w4ttbv.ng.0001.use1.cache.amazonaws.com:6379"
+        },
+        {
+          "name": "INSTALL_LOCK",
+          "value": "true"
+        },
+        {
+          "name": "SSL_MODE",
+          "value": "disable"
+        },
+        {
+          "name": "SESSION_PROVIDER",
+          "value": "redis"
+        },
+        {
+          "name": "SESSION_PROVIDER_CONFIG",
+          "value": "network=tcp,addr=gogs-redis.w4ttbv.ng.0001.use1.cache.amazonaws.com:6379,db=0,pool_size=100,idle_timeout=180"
+        },
+        {
+          "name": "CACHE_ADAPTER",
+          "value": "redis"
+        },
+        {
+          "name": "CACHE_HOST",
+          "value": "network=tcp,addr=gogs-redis.w4ttbv.ng.0001.use1.cache.amazonaws.com:6379,db=0,pool_size=100,idle_timeout=180"
+        },
+        {
+          "name": "DISABLE_SSH",
+          "value": "true"
+        },
+        {
+          "name": "START_SSH_SERVER",
+          "value": "false"
+        },
+        {
+          "name": "CRON_ENABLED",
+          "value": "false"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "DB_PASSWORD",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:582187152769:secret:gogs/database-OuGFWs:password::"
+        },
+        {
+          "name": "SECRET_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:582187152769:secret:gogs/app-2kCMos:secret_key::"
+        }
+      ],
+      "mountPoints": [
+        {
+          "sourceVolume": "gogs-data",
+          "containerPath": "/data",
+          "readOnly": false
+        }
+      ],
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1"
+        ],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/gogs",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ],
+  "volumes": [
+    {
+      "name": "gogs-data",
+      "efsVolumeConfiguration": {
+        "fileSystemId": "fs-0f00f182e2c134wc0",
+        "rootDirectory": "/"
+      }
+    }
+  ]
+}

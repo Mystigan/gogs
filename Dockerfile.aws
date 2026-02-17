@@ -1,0 +1,71 @@
+# Build stage with optimized caching
+FROM golang:1.26-alpine3.23 AS builder
+
+# Install build dependencies first (cached layer)
+RUN apk --no-cache add build-base git linux-pam-dev ca-certificates
+
+# Install Task separately for better caching
+ARG TASK_VERSION=3.40.1
+ARG TARGETARCH
+RUN wget -q "https://github.com/go-task/task/releases/download/v${TASK_VERSION}/task_linux_${TARGETARCH}.tar.gz" \
+    && tar -xzf "task_linux_${TARGETARCH}.tar.gz" \
+    && mv task /usr/local/bin/ \
+    && rm "task_linux_${TARGETARCH}.tar.gz"
+
+WORKDIR /build
+
+# Copy go.mod and go.sum first for dependency caching
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Copy custom AWS configuration
+COPY custom/conf/app.ini custom/conf/app.ini
+
+# Build with proper tags for PostgreSQL and certificate support
+ARG BUILD_TAGS="cert pam"
+RUN task build TAGS="${BUILD_TAGS}"
+
+# Runtime stage based on Dockerfile.next approach
+FROM alpine:3.23
+
+ARG GOGS_UID=1000
+ARG GOGS_GID=1000
+
+# Install runtime dependencies
+RUN apk --no-cache add \
+    bash \
+    ca-certificates \
+    git \
+    linux-pam \
+    openssh-keygen \
+    tzdata \
+    wget \
+    && addgroup -g ${GOGS_GID} -S git \
+    && adduser -u ${GOGS_UID} -G git -H -D -g 'Gogs Git User' -h /data/git -s /bin/sh git
+
+ENV GOGS_CUSTOM=/data/gogs
+
+WORKDIR /app/gogs
+
+# Copy binary and startup script
+COPY --from=builder /build/.bin/gogs .
+COPY --chmod=755 docker-next/start.sh .
+
+# Setup data directory and permissions
+RUN mkdir -p /data \
+    && ln -s /data/git /home/git \
+    && chown -R git:git /app/gogs /data
+
+VOLUME ["/data"]
+EXPOSE 3000
+
+# Healthcheck for ECS
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
+
+USER git:git
+ENTRYPOINT ["/app/gogs/start.sh"]
+CMD ["/app/gogs/gogs", "web"]
