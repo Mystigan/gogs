@@ -4,6 +4,13 @@ on:
   push:
     branches:
       - staging
+    paths-ignore:
+      - '.github/**'
+      - '*.md'
+      - '.gitignore'
+      - '.golangci.yml'
+      - 'docs/**'
+      - 'scripts/**'
 
 env:
   AWS_REGION: us-east-1
