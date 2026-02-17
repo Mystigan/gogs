@@ -6,3 +6,5 @@ import (
 
 //go:embed assets/* css/* img/* js/* plugins/*
 var Files embed.FS
+
+// dummy text to test cd workflow.
