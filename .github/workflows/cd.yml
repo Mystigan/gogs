@@ -44,6 +44,11 @@ jobs:
           echo "timestamp=$(date +%Y%m%d-%H%M%S)" >> $GITHUB_OUTPUT
           echo "short-sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
+      - name: Create app.ini from secret
+        run: |
+          mkdir -p custom/conf
+          echo "${{ secrets.GOGS_APP_INI }}" > custom/conf/app.ini
+
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
         env:
