@@ -365,3 +365,5 @@ For issues related to:
 - **GitHub Actions**: Review workflow logs in Actions tab
 - **Gogs Application**: See main project README and documentation
 - **Docker Build**: Check `Dockerfile.aws` and build logs
+
+#sample text to trigger ci
