@@ -12,6 +12,8 @@ Taskfile.yml
 .dockerignore
 Dockerfile
 Dockerfile.next
+Dockerfile.aws
+aws/
 test-report.json
 coverage
 trivy.yaml
