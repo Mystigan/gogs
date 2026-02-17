@@ -128,8 +128,13 @@
     {
       "name": "gogs-data",
       "efsVolumeConfiguration": {
-        "fileSystemId": "fs-0f00f182e2c134wc0",
-        "rootDirectory": "/"
+        "fileSystemId": "fs-0f00f182e2c538eb0",
+        "rootDirectory": "/",
+        "transitEncryption": "ENABLED",
+        "authorizationConfig": {
+          "accessPointId": "fsap-04dcda8e0b9483248",
+          "iam": "DISABLED"
+        }
       }
     }
   ]
